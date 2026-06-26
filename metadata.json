@@ -1,0 +1,6 @@
+{
+  "name": "رعاية الأمل",
+  "description": "منصة تفاعلية وتوعوية لأولياء أمور الأطفال الذين يعانون من نقص الأكسجين عند الولادة، مع التركيز على مخاطر الحمى وكيفية إدارتها وحساب جرعات الأدوية.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
