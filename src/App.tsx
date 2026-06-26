@@ -7,7 +7,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Heart, Shield, AlertCircle, Sparkles, Phone, ShieldCheck, CheckCircle2,
-  ChevronDown, ArrowLeft, ArrowUpRight, HelpCircle, Activity 
+  ChevronDown, ArrowLeft, ArrowUpRight, HelpCircle, Activity, Video, ClipboardList, Home 
 } from 'lucide-react';
 
 import { Lead } from './types';
@@ -21,10 +21,39 @@ import AdminDashboard from './components/AdminDashboard';
 export default function App() {
   const [isAdminActive, setIsAdminActive] = useState(false);
   const [currentLead, setCurrentLead] = useState<Lead | null>(null);
+  const [activeTab, setActiveTab] = useState<'home' | 'register' | 'videos' | 'faq'>('home');
   
   const formRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLDivElement>(null);
   const faqRef = useRef<HTMLDivElement>(null);
+
+  // Active tab scroll tracker for mobile bottom navigation
+  useEffect(() => {
+    const handleScroll = () => {
+      if (isAdminActive) return;
+      
+      const scrollY = window.scrollY;
+      const formTop = formRef.current?.offsetTop || 0;
+      const videoTop = videoRef.current?.offsetTop || 0;
+      const faqTop = faqRef.current?.offsetTop || 0;
+
+      // Offsets to determine when we are considered to be in that section
+      const offset = 220;
+
+      if (scrollY < formTop - offset) {
+        setActiveTab('home');
+      } else if (scrollY >= formTop - offset && scrollY < videoTop - offset) {
+        setActiveTab('register');
+      } else if (scrollY >= videoTop - offset && scrollY < faqTop - offset) {
+        setActiveTab('videos');
+      } else if (scrollY >= faqTop - offset) {
+        setActiveTab('faq');
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [isAdminActive]);
 
   // Check if there is an existing registered lead in this browser to welcome them back!
   useEffect(() => {
@@ -61,6 +90,28 @@ export default function App() {
     }
   };
 
+  const handleTabClick = (tab: 'home' | 'register' | 'videos' | 'faq') => {
+    if (isAdminActive) {
+      setIsAdminActive(false);
+    }
+    
+    setTimeout(() => {
+      if (tab === 'home') {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        setActiveTab('home');
+      } else if (tab === 'register') {
+        scrollToSection(formRef);
+        setActiveTab('register');
+      } else if (tab === 'videos') {
+        scrollToSection(videoRef);
+        setActiveTab('videos');
+      } else if (tab === 'faq') {
+        scrollToSection(faqRef);
+        setActiveTab('faq');
+      }
+    }, isAdminActive ? 150 : 0);
+  };
+
   const handleToggleAdmin = () => {
     setIsAdminActive(prev => !prev);
     // Scroll to top of screen
@@ -72,7 +123,7 @@ export default function App() {
       
       {/* Background Decor */}
       <div className="pointer-events-none absolute top-[-10%] right-[-10%] w-[500px] h-[500px] bg-teal-500/10 rounded-full blur-[120px] z-0"></div>
-      <div className="pointer-events-none absolute bottom-[-10%] left-[-10%] w-[500px] h-[500px] bg-indigo-600/10 rounded-full blur-[120px] z-0"></div>
+      <div className="pointer-events-none absolute bottom-0 left-[-10%] w-[500px] h-[500px] bg-indigo-600/10 rounded-full blur-[120px] z-0"></div>
       
       {/* 1. Header Navigation */}
       <Header 
@@ -191,7 +242,7 @@ export default function App() {
       </main>
 
       {/* Footer Details */}
-      <footer className="mt-16 bg-black/40 backdrop-blur-md border-t border-white/10 py-12 text-center text-xs text-slate-300 relative z-10">
+      <footer className="mt-16 bg-black/40 backdrop-blur-md border-t border-white/10 pt-12 pb-16 lg:pb-12 text-center text-xs text-slate-300 relative z-10">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-6">
           
           {/* Heart Emblem Footer logo */}
@@ -229,6 +280,89 @@ export default function App() {
 
         </div>
       </footer>
+
+      {/* Sticky Bottom Navigation for Mobile Devices */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 lg:hidden w-full">
+        <div className="bg-[#0f172a]/95 backdrop-blur-lg border-t border-teal-500/20 rounded-t-2xl px-3 py-3 shadow-2xl shadow-black/80 flex items-center justify-around">
+          
+          {/* Tab 1: Home */}
+          <motion.button
+            whileTap={{ scale: 0.9 }}
+            onClick={() => handleTabClick('home')}
+            className={`flex flex-col items-center justify-center flex-1 transition-all relative py-1 cursor-pointer ${
+              activeTab === 'home' ? 'text-teal-400 font-black' : 'text-slate-400'
+            }`}
+          >
+            <Home className="h-5 w-5 mb-0.5" />
+            <span className="text-[9px]">الرئيسية</span>
+            {activeTab === 'home' && (
+              <motion.div 
+                layoutId="activeTabIndicator"
+                className="absolute bottom-[-2px] w-4 h-0.5 bg-teal-400 rounded-full"
+                transition={{ type: "spring", stiffness: 380, damping: 30 }}
+              />
+            )}
+          </motion.button>
+
+          {/* Tab 2: Register */}
+          <motion.button
+            whileTap={{ scale: 0.9 }}
+            onClick={() => handleTabClick('register')}
+            className={`flex flex-col items-center justify-center flex-1 transition-all relative py-1 cursor-pointer ${
+              activeTab === 'register' ? 'text-teal-400 font-black' : 'text-slate-400'
+            }`}
+          >
+            <ClipboardList className="h-5 w-5 mb-0.5" />
+            <span className="text-[9px]">نموذج التسجيل</span>
+            {activeTab === 'register' && (
+              <motion.div 
+                layoutId="activeTabIndicator"
+                className="absolute bottom-[-2px] w-4 h-0.5 bg-teal-400 rounded-full"
+                transition={{ type: "spring", stiffness: 380, damping: 30 }}
+              />
+            )}
+          </motion.button>
+
+          {/* Tab 3: Videos */}
+          <motion.button
+            whileTap={{ scale: 0.9 }}
+            onClick={() => handleTabClick('videos')}
+            className={`flex flex-col items-center justify-center flex-1 transition-all relative py-1 cursor-pointer ${
+              activeTab === 'videos' ? 'text-teal-400 font-black' : 'text-slate-400'
+            }`}
+          >
+            <Video className="h-5 w-5 mb-0.5" />
+            <span className="text-[9px]">المكتبة المرئية</span>
+            {activeTab === 'videos' && (
+              <motion.div 
+                layoutId="activeTabIndicator"
+                className="absolute bottom-[-2px] w-4 h-0.5 bg-teal-400 rounded-full"
+                transition={{ type: "spring", stiffness: 380, damping: 30 }}
+              />
+            )}
+          </motion.button>
+
+          {/* Tab 4: FAQ */}
+          <motion.button
+            whileTap={{ scale: 0.9 }}
+            onClick={() => handleTabClick('faq')}
+            className={`flex flex-col items-center justify-center flex-1 transition-all relative py-1 cursor-pointer ${
+              activeTab === 'faq' ? 'text-teal-400 font-black' : 'text-slate-400'
+            }`}
+          >
+            <HelpCircle className="h-5 w-5 mb-0.5" />
+            <span className="text-[9px]">الأسئلة الشائعة</span>
+            {activeTab === 'faq' && (
+              <motion.div 
+                layoutId="activeTabIndicator"
+                className="absolute bottom-[-2px] w-4 h-0.5 bg-teal-400 rounded-full"
+                transition={{ type: "spring", stiffness: 380, damping: 30 }}
+              />
+            )}
+          </motion.button>
+
+        </div>
+      </div>
 
     </div>
   );

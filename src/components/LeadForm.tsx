@@ -5,6 +5,7 @@
 
 import React, { useState } from 'react';
 import { User, Phone, Calendar, Heart, Send, CheckCircle2, AlertCircle, MapPin } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 import { CITIES_LIST } from '../data';
 import { Lead } from '../types';
 
@@ -76,6 +77,43 @@ export default function LeadForm({ onSubmitSuccess }: LeadFormProps) {
         const existingLeads: Lead[] = JSON.parse(localStorage.getItem('hope_leads') || '[]');
         existingLeads.unshift(newLead);
         localStorage.setItem('hope_leads', JSON.stringify(existingLeads));
+
+        // Background Google Sheets auto-sync
+        const gToken = sessionStorage.getItem('g_sheets_token');
+        const gSheetId = localStorage.getItem('hope_spreadsheet_id');
+        const isAutoSync = localStorage.getItem('hope_auto_sync') === 'true';
+
+        if (gToken && gSheetId && isAutoSync) {
+          const ageMap: Record<string, string> = {
+            'less-than-6m': 'أقل من 6 أشهر',
+            '6-12m': '6-12 شهراً',
+            '1-3y': '1-3 سنوات',
+            'more-than-3y': 'أكثر من 3 سنوات'
+          };
+          const feverMap: Record<string, string> = {
+            'yes': 'نعم',
+            'no': 'لا',
+            'not-sure': 'غير متأكد'
+          };
+
+          fetch(`https://sheets.googleapis.com/v4/spreadsheets/${gSheetId}/values/Sheet1!A1:append?valueInputOption=USER_ENTERED`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${gToken}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              values: [[
+                newLead.parentName,
+                newLead.phoneNumber,
+                ageMap[newLead.childAge] || newLead.childAge,
+                feverMap[newLead.hadFeverBefore] || newLead.hadFeverBefore,
+                newLead.city,
+                new Date(newLead.createdAt).toLocaleString('ar-DZ')
+              ]],
+            }),
+          }).catch(err => console.error('Auto sync to Google Sheets failed:', err));
+        }
       } catch (err) {
         console.error('LocalStorage error:', err);
       }
@@ -120,15 +158,27 @@ export default function LeadForm({ onSubmitSuccess }: LeadFormProps) {
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-5">
-            {error && (
-              <div className="flex items-start gap-2 rounded-xl bg-rose-500/10 p-3 text-xs font-semibold text-rose-400 border border-rose-500/20 animate-bounce">
-                <AlertCircle className="h-5 w-5 shrink-0 text-rose-400" />
-                <p className="self-center">{error}</p>
-              </div>
-            )}
+            <AnimatePresence mode="wait">
+              {error && (
+                <motion.div 
+                  initial={{ opacity: 0, y: -10, height: 0 }}
+                  animate={{ opacity: 1, y: 0, height: 'auto' }}
+                  exit={{ opacity: 0, y: -10, height: 0 }}
+                  transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                  className="flex items-start gap-2 rounded-xl bg-rose-500/10 p-3 text-xs font-semibold text-rose-400 border border-rose-500/20 overflow-hidden"
+                >
+                  <AlertCircle className="h-5 w-5 shrink-0 text-rose-400" />
+                  <p className="self-center">{error}</p>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             {/* Parent Name */}
-            <div className="space-y-1.5">
+            <motion.div 
+              className="space-y-1.5"
+              whileHover={{ scale: 1.005 }}
+              transition={{ type: "spring", stiffness: 400, damping: 25 }}
+            >
               <label htmlFor="parentName" className="block text-sm font-bold text-teal-400">
                 اسم ولي الأمر الكامل <span className="text-rose-400">*</span>
               </label>
@@ -136,19 +186,25 @@ export default function LeadForm({ onSubmitSuccess }: LeadFormProps) {
                 <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400">
                   <User className="h-4 w-4" />
                 </div>
-                <input
+                <motion.input
                   type="text"
                   id="parentName"
                   value={parentName}
                   onChange={(e) => setParentName(e.target.value)}
+                  whileFocus={{ scale: 1.01, boxShadow: "0 0 0 2px rgba(20, 184, 166, 0.2)" }}
+                  transition={{ duration: 0.15 }}
                   placeholder="مثال: أحمد العبدالله"
-                  className="block w-full rounded-xl border border-white/10 bg-white/5 py-2.5 pr-10 pl-3 text-sm text-white outline-none transition-all placeholder:text-slate-500 focus:border-teal-500/50 focus:bg-white/10 focus:ring-2 focus:ring-teal-500/20"
+                  className="block w-full rounded-xl border border-white/10 bg-white/5 py-2.5 pr-10 pl-3 text-sm text-white outline-none transition-all placeholder:text-slate-500 focus:border-teal-500/50 focus:bg-white/10"
                 />
               </div>
-            </div>
+            </motion.div>
 
             {/* Phone Number */}
-            <div className="space-y-1.5">
+            <motion.div 
+              className="space-y-1.5"
+              whileHover={{ scale: 1.005 }}
+              transition={{ type: "spring", stiffness: 400, damping: 25 }}
+            >
               <label htmlFor="phoneNumber" className="block text-sm font-bold text-teal-400">
                 رقم الهاتف الجوال <span className="text-rose-400">*</span>
               </label>
@@ -169,11 +225,13 @@ export default function LeadForm({ onSubmitSuccess }: LeadFormProps) {
                   <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400">
                     <Phone className="h-4 w-4" />
                   </div>
-                  <input
+                  <motion.input
                     type="tel"
                     id="phoneNumber"
                     value={phoneNumber}
                     onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, ''))}
+                    whileFocus={{ scale: 1.01 }}
+                    transition={{ duration: 0.15 }}
                     placeholder="مثال: 550123456"
                     className="block w-full py-2.5 pr-10 pl-3 text-sm text-white bg-transparent outline-none placeholder:text-slate-500"
                     dir="ltr"
@@ -183,10 +241,14 @@ export default function LeadForm({ onSubmitSuccess }: LeadFormProps) {
               <p className="text-[10px] text-slate-400 mr-1">
                 الرجاء إدخال الرقم بدون الصفر الأول وبدون رمز الدولة (مثال بالجزائر: 5XXXXXXXX أو 6XXXXXXXX)
               </p>
-            </div>
+            </motion.div>
 
             {/* City/State with suggestions */}
-            <div className="space-y-1.5 relative">
+            <motion.div 
+              className="space-y-1.5 relative"
+              whileHover={{ scale: 1.005 }}
+              transition={{ type: "spring", stiffness: 400, damping: 25 }}
+            >
               <label htmlFor="city" className="block text-sm font-bold text-teal-400">
                 المنطقة / المدينة / الولاية السكنية <span className="text-rose-400">*</span>
               </label>
@@ -194,7 +256,7 @@ export default function LeadForm({ onSubmitSuccess }: LeadFormProps) {
                 <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400">
                   <MapPin className="h-4 w-4" />
                 </div>
-                <input
+                <motion.input
                   type="text"
                   id="city"
                   value={city}
@@ -207,27 +269,37 @@ export default function LeadForm({ onSubmitSuccess }: LeadFormProps) {
                     // Delay to allow clicking on list items
                     setTimeout(() => setShowCitySuggestions(false), 200);
                   }}
+                  whileFocus={{ scale: 1.01, boxShadow: "0 0 0 2px rgba(20, 184, 166, 0.2)" }}
+                  transition={{ duration: 0.15 }}
                   placeholder="ابتدئ بكتابة ولايتك مثل: الجزائر، وهران، قسنطينة..."
-                  className="block w-full rounded-xl border border-white/10 bg-white/5 py-2.5 pr-10 pl-3 text-sm text-white outline-none transition-all placeholder:text-slate-500 focus:border-teal-500/50 focus:bg-white/10 focus:ring-2 focus:ring-teal-500/20"
+                  className="block w-full rounded-xl border border-white/10 bg-white/5 py-2.5 pr-10 pl-3 text-sm text-white outline-none transition-all placeholder:text-slate-500 focus:border-teal-500/50 focus:bg-white/10"
                 />
               </div>
               
-              {showCitySuggestions && filteredCities.length > 0 && (
-                <ul className="absolute z-10 mt-1 max-h-48 w-full overflow-y-auto rounded-xl border border-white/10 bg-slate-900 py-1 shadow-2xl text-right text-xs">
-                  {filteredCities.map((c) => (
-                    <li key={c}>
-                      <button
-                        type="button"
-                        onMouseDown={() => setCity(c)}
-                        className="w-full px-4 py-2 text-right text-slate-100 hover:bg-teal-500/20 hover:text-teal-300 font-medium transition-colors"
-                      >
-                        {c}
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
+              <AnimatePresence>
+                {showCitySuggestions && filteredCities.length > 0 && (
+                  <motion.ul 
+                    initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                    transition={{ duration: 0.15, ease: "easeOut" }}
+                    className="absolute z-10 mt-1 max-h-48 w-full overflow-y-auto rounded-xl border border-white/10 bg-slate-900 py-1 shadow-2xl text-right text-xs"
+                  >
+                    {filteredCities.map((c) => (
+                      <li key={c}>
+                        <button
+                          type="button"
+                          onMouseDown={() => setCity(c)}
+                          className="w-full px-4 py-2 text-right text-slate-100 hover:bg-teal-500/20 hover:text-teal-300 font-medium transition-colors"
+                        >
+                          {c}
+                        </button>
+                      </li>
+                    ))}
+                  </motion.ul>
+                )}
+              </AnimatePresence>
+            </motion.div>
 
             {/* Grid of Child Age & Previous Fever */}
             <div className="grid gap-4 sm:grid-cols-2">
@@ -243,8 +315,11 @@ export default function LeadForm({ onSubmitSuccess }: LeadFormProps) {
                     { id: '1-3y', label: '1 - 3 سنوات' },
                     { id: 'more-than-3y', label: 'أكثر من 3 سنوات' }
                   ].map((option) => (
-                    <label
+                    <motion.label
                       key={option.id}
+                      whileHover={{ scale: 1.03, y: -1 }}
+                      whileTap={{ scale: 0.97 }}
+                      transition={{ type: "spring", stiffness: 450, damping: 15 }}
                       className={`flex cursor-pointer items-center justify-center rounded-xl border p-2.5 text-center text-xs font-semibold transition-all ${
                         childAge === option.id
                           ? 'border-teal-500 bg-teal-500/20 text-teal-300 ring-2 ring-teal-500/20'
@@ -260,7 +335,7 @@ export default function LeadForm({ onSubmitSuccess }: LeadFormProps) {
                         className="sr-only"
                       />
                       <span>{option.label}</span>
-                    </label>
+                    </motion.label>
                   ))}
                 </div>
               </div>
@@ -276,8 +351,11 @@ export default function LeadForm({ onSubmitSuccess }: LeadFormProps) {
                     { id: 'no', label: 'لا' },
                     { id: 'not-sure', label: 'غير متأكد' }
                   ].map((option) => (
-                    <label
+                    <motion.label
                       key={option.id}
+                      whileHover={{ scale: 1.03, y: -1 }}
+                      whileTap={{ scale: 0.97 }}
+                      transition={{ type: "spring", stiffness: 450, damping: 15 }}
                       className={`flex cursor-pointer items-center justify-center rounded-xl border p-2.5 text-center text-xs font-semibold transition-all ${
                         hadFeverBefore === option.id
                           ? 'border-teal-500 bg-teal-500/20 text-teal-300 ring-2 ring-teal-500/20'
@@ -293,7 +371,7 @@ export default function LeadForm({ onSubmitSuccess }: LeadFormProps) {
                         className="sr-only"
                       />
                       <span>{option.label}</span>
-                    </label>
+                    </motion.label>
                   ))}
                 </div>
               </div>
@@ -305,10 +383,12 @@ export default function LeadForm({ onSubmitSuccess }: LeadFormProps) {
                 خصوصيتكم محل اهتمامنا. يتم استخدام هذه البيانات للخدمة التعليمية والتواصل الإرشادي من قبل ممثلي "رعاية الأمل" فقط، ولن يتم مشاركتها مطلقاً مع أي جهة خارجية.
               </p>
               
-              <button
+              <motion.button
                 type="submit"
                 disabled={isSubmitting}
-                className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-l from-teal-500 to-emerald-500 py-3 text-sm font-bold text-white shadow-xl shadow-teal-500/20 transition-all hover:from-teal-400 hover:to-emerald-400 hover:shadow-2xl hover:-translate-y-0.5 active:translate-y-0 disabled:from-teal-700 disabled:to-emerald-700 disabled:pointer-events-none"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-l from-teal-500 to-emerald-500 py-3 text-sm font-bold text-white shadow-xl shadow-teal-500/20 transition-all hover:from-teal-400 hover:to-emerald-400 hover:shadow-2xl disabled:from-teal-700 disabled:to-emerald-700 disabled:pointer-events-none cursor-pointer"
               >
                 {isSubmitting ? (
                   <>
@@ -321,7 +401,7 @@ export default function LeadForm({ onSubmitSuccess }: LeadFormProps) {
                     <span>تأكيد التسجيل وتحميل دليل الطوارئ التفاعلي</span>
                   </>
                 )}
-              </button>
+              </motion.button>
             </div>
           </form>
         )}

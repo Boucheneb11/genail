@@ -90,7 +90,7 @@ export default function VideoCarousel({ isRegistered, onPromptRegistration }: Vi
         {/* Lock Overlay for Unregistered Users */}
         {!isRegistered && (
           <div 
-            className="absolute -inset-4 z-20 flex flex-col items-center justify-center bg-slate-950/85 backdrop-blur-md rounded-2xl p-6 text-center border border-white/10 transition-all cursor-pointer group hover:bg-slate-950/90"
+            className="absolute -inset-4 z-20 flex flex-col items-center justify-center bg-slate-950/90 backdrop-blur-md rounded-2xl p-6 text-center border border-white/10 transition-all cursor-pointer group hover:bg-slate-950/95"
             onClick={(e) => {
               e.stopPropagation();
               onPromptRegistration();
@@ -99,12 +99,12 @@ export default function VideoCarousel({ isRegistered, onPromptRegistration }: Vi
             <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-400 border border-amber-500/20 shadow-lg shadow-amber-500/5 group-hover:scale-110 transition-transform duration-300 animate-pulse">
               <Lock className="h-7 w-7" />
             </div>
-            <h3 className="text-base font-black text-white sm:text-lg">هذا المحتوى التوعوي مغلق مؤقتاً</h3>
+            <h3 className="text-base font-black text-white sm:text-lg">يجب تسجيل بياناتك أولاً لمشاهدة محتويات المكتبة المرئية</h3>
             <p className="mt-2 max-w-md text-xs font-semibold text-slate-300 leading-relaxed">
-              تتطلب المكتبة المرئية تسجيل اهتمامك أولاً لتفعيل كافة العروض التثقيفية والتعليمية المخصصة مجاناً.
+              يرجى ملء استمارة التسجيل المخصصة بالأعلى لفتح كافة الفيديوهات الإرشادية والوقائية فوراً مجاناً.
             </p>
             <span className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-l from-teal-500 to-emerald-500 px-5 py-2.5 text-xs font-black text-white shadow-xl shadow-teal-500/20 group-hover:from-teal-400 group-hover:to-emerald-400 hover:shadow-2xl transition-all">
-              <span>سجل الآن لفتح المكتبة المرئية فوراً</span>
+              <span>سجل الآن بالأعلى لمشاهدة الفيديوهات</span>
               <span>←</span>
             </span>
           </div>
